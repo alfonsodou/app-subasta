@@ -4,7 +4,12 @@ import detectEthereumProvider from "@metamask/detect-provider"
 import subastaManifest from "../contracts/Subasta.json"
 import { ethers, Contract } from "ethers"
 import { decodeError } from "@ubiquity-os/ethers-decode-error";
-import { Container } from "react-bootstrap";
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import Button from 'react-bootstrap/Button';
+import Alert from 'react-bootstrap/Alert';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function Home() {
   const myContract = useRef(null);
@@ -14,6 +19,7 @@ export default function Home() {
   const [deadLine, setDeadLine] = useState(0);
   const [description, setDescription] = useState("");
   const [bid, setBid] = useState(0);
+  const [active, setActive] = useState(0);
 
   useEffect( () => {
     let init = async () => {
@@ -37,7 +43,7 @@ export default function Home() {
         let providerEthers = new ethers.providers.Web3Provider(provider);
         let signer = providerEthers.getSigner();
         myContract.current = new Contract(
-          "0x60a392e720e54b80405a9a95878de57a5416099e",
+          "0x5dc0295467ab7d07420d2a10c3d88336ba16ef9a",
           subastaManifest.abi,
           signer
         );
@@ -89,6 +95,9 @@ export default function Home() {
 
       let maxBidAddressTemp = await myContract.current.addressMaxBid();
       setMaxBidAddress(maxBidAddressTemp);
+
+      let activeTemp = await myContract.current.isActive()      
+      setActive(activeTemp);      
     } catch (err) {
       const error = decodeError(err);
       alert(error.error);
@@ -117,18 +126,28 @@ export default function Home() {
 
   return (
     <Container>
+      <Row>
+        <Col>
+          <Alert>
+            <Alert.Heading>
+              <p align="center">Bienvenido a la aplicación de Subastas</p>
+            </Alert.Heading>
+          </Alert>
+        </Col>
+      </Row>
       <h1>Description: {description}</h1>
       <h1>DeadLine: {deadLine}</h1>
       <h1>MinBid: {minBid}</h1>
       <h1>MaxBid: {maxBid}</h1>
       <h1>Address Max Bid: {maxBidAddress}</h1>
+      <h1>isActive: {active.toString()}</h1>
       <input 
         type="text" 
         value={ bid } 
         onChange={ (e) => setBid(e.target.value) }/>
-      <button onClick={ () => { makeBid() }}>
+      <Button variant="primary" onClick={ () => { makeBid() }}>
         Send
-      </button>
+      </Button>
     </Container>
   );
  
