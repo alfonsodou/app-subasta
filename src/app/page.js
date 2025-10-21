@@ -8,10 +8,16 @@ import { Container } from "react-bootstrap";
 
 export default function Home() {
   const myContract = useRef(null);
+  const [minBid, setMinBid] = useState(0);
+  const [maxBid, setMaxBid] = useState(0);
+  const [maxBidAddress, setMaxBidAddress] = useState();
+  const [deadLine, setDeadLine] = useState(0);
+  const [description, setDescription] = useState("");
 
   useEffect( () => {
     let init = async () => {
       await configurarBlockchain();
+      await cargarDatos();
     }
     init();
   }, [])
@@ -44,9 +50,58 @@ export default function Home() {
     }
   }
 
+  /**
+  * Almacena los datos del contrato
+  *
+  * @returns {void}
+  */
+  const cargarDatos = async () => {
+   try {  
+      let descriptionTemp = await myContract.current.description();
+      setDescription(descriptionTemp);
+
+      let deadlineMinutes = await myContract.current.deadLine();
+      let deadlineDate = new Date(deadlineMinutes * 1000);
+      setDeadLine(deadlineDate.toLocaleString());      
+
+      let minBidWei = await myContract.current.minBid();
+      let minBidBNB = ethers.utils.formatEther(minBidWei);
+      setMinBid(minBidBNB);    
+      
+      await cargarDatosDinamicos();
+    } catch (err) {
+      const error = decodeError(err);
+      alert(error.error);
+    }
+  };
+
+  /**
+  * Almacena los datos dinámicos del contrato
+  *
+  * @returns {void}
+  */
+  const cargarDatosDinamicos = async () => {
+    try {  
+      let maxBidWei = await myContract.current.maxBid();
+      let maxBidBNB = ethers.utils.formatEther(maxBidWei);
+      setMaxBid(maxBidBNB);
+
+      let maxBidAddressTemp = await myContract.current.addressMaxBid();
+      setMaxBidAddress(maxBidAddressTemp);
+    } catch (err) {
+      const error = decodeError(err);
+      alert(error.error);
+    }
+  };
+
   return (
     <Container>
-
+      <h1>Description: {description}</h1>
+      <h1>DeadLine: {deadLine}</h1>
+      <h1>MinBid: {minBid}</h1>
+      <h1>MaxBid: {maxBid}</h1>
+      <h1>Address Max Bid: {maxBidAddress}</h1>
     </Container>
   );
+ 
 }
