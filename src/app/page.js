@@ -13,6 +13,7 @@ export default function Home() {
   const [maxBidAddress, setMaxBidAddress] = useState();
   const [deadLine, setDeadLine] = useState(0);
   const [description, setDescription] = useState("");
+  const [bid, setBid] = useState(0);
 
   useEffect( () => {
     let init = async () => {
@@ -94,6 +95,26 @@ export default function Home() {
     }
   };
 
+  /**
+   * Realiza una puja
+   */
+  let makeBid = async () => {
+    try {
+      const tx = await myContract.current.makeBid({
+        value: ethers.utils.parseEther(bid)
+      })
+  
+      await tx.wait();
+      setBid(0);
+      
+      // Actualizamos los datos del contrato que se han modificado
+      cargarDatosDinamicos();  
+    } catch(err) {
+      const error = decodeError(err);
+      alert(error.error);
+    }
+  }
+
   return (
     <Container>
       <h1>Description: {description}</h1>
@@ -101,6 +122,13 @@ export default function Home() {
       <h1>MinBid: {minBid}</h1>
       <h1>MaxBid: {maxBid}</h1>
       <h1>Address Max Bid: {maxBidAddress}</h1>
+      <input 
+        type="text" 
+        value={ bid } 
+        onChange={ (e) => setBid(e.target.value) }/>
+      <button onClick={ () => { makeBid() }}>
+        Send
+      </button>
     </Container>
   );
  
