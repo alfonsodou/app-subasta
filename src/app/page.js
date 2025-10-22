@@ -9,6 +9,7 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Alert from "react-bootstrap/Alert";
+import Form from "react-bootstrap/Form";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Home() {
@@ -20,6 +21,7 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [bid, setBid] = useState(0);
   const [active, setActive] = useState(0);
+  const [numBids, setNumBids] = useState(0);
 
   useEffect(() => {
     let init = async () => {
@@ -43,7 +45,7 @@ export default function Home() {
         let providerEthers = new ethers.providers.Web3Provider(provider);
         let signer = providerEthers.getSigner();
         myContract.current = new Contract(
-          "0x5dc0295467ab7d07420d2a10c3d88336ba16ef9a",
+          "0x55706c7b156bab56ff996470fd533adb7e595f6f",
           subastaManifest.abi,
           signer
         );
@@ -95,6 +97,9 @@ export default function Home() {
       let maxBidAddressTemp = await myContract.current.addressMaxBid();
       setMaxBidAddress(maxBidAddressTemp);
 
+      let numBidsTemp = await myContract.current.numBids();
+      setNumBids(numBidsTemp);
+
       cargarEstadoSubasta();
     } catch (err) {
       const error = decodeError(err);
@@ -142,40 +147,61 @@ export default function Home() {
     }
   };
 
-  return (
-    <Container>
-      <Row>
-        <Col>
-          <Alert>
-            <Alert.Heading>
-              <p align="center">Bienvenido a la aplicación de Subastas</p>
-            </Alert.Heading>
-          </Alert>
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <h1>Description: {description}</h1>
-          <h1>DeadLine: {deadLine}</h1>
-          <h1>MinBid: {minBid}</h1>
-          <h1>MaxBid: {maxBid}</h1>
-          <h1>Address Max Bid: {maxBidAddress}</h1>
-          <h1>isActive: {active.toString()}</h1>
-          <input
-            type="text"
-            value={bid}
-            onChange={(e) => setBid(e.target.value)}
-          />
-          <Button
-            variant="primary"
-            onClick={() => {
-              makeBid();
-            }}
-          >
-            Send
-          </Button>
-        </Col>
-      </Row>
-    </Container>
-  );
+  if (active) {
+    return (
+      <Container>
+        <Row>
+          <Col>
+            <Alert>
+              <Alert.Heading>
+                <p align="center">Bienvenido a la aplicación de Subastas</p>
+              </Alert.Heading>
+              <p align="center">
+                Estamos subastando el siguiente artículo: {description}
+              </p>
+            </Alert>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <p>
+              Estás de suerte! La subasta todavía está abierta hasta las{" "}
+              {deadLine}
+            </p>
+            <p>La puja más alta actualmente es de {maxBid} ETH</p>
+
+            <Form>
+              <Form.Group controlId="formBasicBid">
+                <Form.Label>¿Quieres realizar una oferta?</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder={"Debe ser mayor que ${maxBid} ETH"}
+                  onChange={(e) => setBid(e.target.value.trim())}
+                ></Form.Control>
+              </Form.Group>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  makeBid();
+                }}
+              >
+                Pujar!
+              </Button>
+            </Form>
+            {/* 
+            <input type="text" onChange={(e) => setBid(e.target.value)} />
+            <button
+              onClick={() => {
+                makeBid();
+              }}
+            >
+              Send
+            </button>*/}
+          </Col>
+        </Row>
+      </Container>
+    );
+  } else {
+    return <h1>Subasta finalizada</h1>;
+  }
 }
