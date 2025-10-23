@@ -19,8 +19,7 @@ export default function Home() {
   const [maxBidAddress, setMaxBidAddress] = useState();
   const [deadLine, setDeadLine] = useState(0);
   const [description, setDescription] = useState("");
-  const [bid, setBid] = useState(0);
-  const [active, setActive] = useState(0);
+  const [bid, setBid] = useState("");
   const [numBids, setNumBids] = useState(0);
 
   useEffect(() => {
@@ -29,7 +28,7 @@ export default function Home() {
       await cargarDatos();
     };
     init();
-  }, []);
+  }, [])
 
   /**
    * Configura la red blockchain y carga el contrato Subasta
@@ -45,7 +44,7 @@ export default function Home() {
         let providerEthers = new ethers.providers.Web3Provider(provider);
         let signer = providerEthers.getSigner();
         myContract.current = new Contract(
-          "0x55706c7b156bab56ff996470fd533adb7e595f6f",
+          "0x247059c8e8999b80d4f3fd90ed28f6902e31b96e",
           subastaManifest.abi,
           signer
         );
@@ -88,7 +87,7 @@ export default function Home() {
    *
    * @returns {void}
    */
-  const cargarDatosDinamicos = async () => {
+  let cargarDatosDinamicos = async () => {
     try {
       let maxBidWei = await myContract.current.maxBid();
       let maxBidBNB = ethers.utils.formatEther(maxBidWei);
@@ -97,23 +96,8 @@ export default function Home() {
       let maxBidAddressTemp = await myContract.current.addressMaxBid();
       setMaxBidAddress(maxBidAddressTemp);
 
-      let numBidsTemp = await myContract.current.numBids();
-      setNumBids(numBidsTemp);
-
-      cargarEstadoSubasta();
-    } catch (err) {
-      const error = decodeError(err);
-      alert(error.error);
-    }
-  };
-
-  /**
-   * Actualiza el estado de la subasta
-   */
-  const cargarEstadoSubasta = async () => {
-    try {
-      let activeTemp = await myContract.current.isActive();
-      setActive(activeTemp);
+      /*let numBidsTemp = await myContract.current.numBids();
+      setNumBids(numBidsTemp);*/
     } catch (err) {
       const error = decodeError(err);
       alert(error.error);
@@ -125,83 +109,66 @@ export default function Home() {
    */
   let makeBid = async () => {
     try {
-      // Actualizamos el estado de la subasta
-      cargarEstadoSubasta();
+      const tx = await myContract.current.makeBid({
+        value: ethers.utils.parseEther(bid)
+      });
 
-      // Si la subasta sigue activa
-      if (active) {
-        const tx = await myContract.current.makeBid({
-          value: ethers.utils.parseEther(bid),
-        });
+      await tx.wait();
 
-        await tx.wait();
-      }
-
-      setBid(0);
+      setBid("");
 
       // Actualizamos los datos del contrato que se han modificado
-      cargarDatosDinamicos();
+      await cargarDatosDinamicos();
     } catch (err) {
       const error = decodeError(err);
       alert(error.error);
     }
   };
 
-  if (active) {
-    return (
-      <Container>
-        <Row>
-          <Col>
-            <Alert>
-              <Alert.Heading>
-                <p align="center">Bienvenido a la aplicación de Subastas</p>
-              </Alert.Heading>
-              <p align="center">
-                Estamos subastando el siguiente artículo: {description}
-              </p>
-            </Alert>
-          </Col>
-        </Row>
-        <Row>
-          <Col>
-            <p>
-              Estás de suerte! La subasta todavía está abierta hasta las{" "}
-              {deadLine}
+  return (
+    <Container>
+      <Row>
+        <Col>
+          <Alert>
+            <Alert.Heading>
+              <p align="center">Bienvenido a la aplicación de Subastas</p>
+            </Alert.Heading>
+            <p align="center">
+              Estamos subastando el siguiente artículo: {description}
             </p>
-            <p>La puja más alta actualmente es de {maxBid} ETH</p>
+          </Alert>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <p>
+            Estás de suerte! La subasta todavía está abierta hasta las{" "}
+            {deadLine}
+          </p>
+          <p>La puja más alta actualmente es de {maxBid} ETH</p>
 
-            <Form>
-              <Form.Group controlId="formBasicBid">
-                <Form.Label>¿Quieres realizar una oferta?</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder={"Debe ser mayor que ${maxBid} ETH"}
-                  onChange={(e) => setBid(e.target.value.trim())}
-                ></Form.Control>
-              </Form.Group>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  makeBid();
-                }}
-              >
-                Pujar!
-              </Button>
-            </Form>
-            {/* 
-            <input type="text" onChange={(e) => setBid(e.target.value)} />
-            <button
+          <Form>
+            <Form.Group controlId="formBasicBid">
+              <Form.Label>
+                ¿Quieres realizar una oferta? (Debe ser mayor que {maxBid} ETH)
+              </Form.Label>
+              <Form.Control
+                type="text"
+                placeholder={"Introduce tu oferta"}
+                onChange={(e) => setBid(e.target.value.trim())}
+              ></Form.Control>
+            </Form.Group>
+            <Button
+              variant="primary"
               onClick={() => {
                 makeBid();
               }}
             >
-              Send
-            </button>*/}
-          </Col>
-        </Row>
-      </Container>
-    );
-  } else {
-    return <h1>Subasta finalizada</h1>;
-  }
+              Pujar!
+            </Button>
+          </Form>
+        </Col>
+      </Row>
+    </Container>
+  );
 }
