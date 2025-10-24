@@ -10,6 +10,7 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Alert from "react-bootstrap/Alert";
 import Form from "react-bootstrap/Form";
+import Card from "react-bootstrap/Card";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Home() {
@@ -28,7 +29,7 @@ export default function Home() {
       await cargarDatos();
     };
     init();
-  }, [])
+  }, []);
 
   /**
    * Configura la red blockchain y carga el contrato Subasta
@@ -110,7 +111,7 @@ export default function Home() {
   let makeBid = async () => {
     try {
       const tx = await myContract.current.makeBid({
-        value: ethers.utils.parseEther(bid)
+        value: ethers.utils.parseEther(bid),
       });
 
       await tx.wait();
@@ -119,6 +120,32 @@ export default function Home() {
 
       // Actualizamos los datos del contrato que se han modificado
       await cargarDatosDinamicos();
+    } catch (err) {
+      const error = decodeError(err);
+      alert(error.error);
+    }
+  };
+
+  /**
+   * Recupera una puja
+   */
+  let askRefund = async () => {
+    try {
+      const tx = await myContract.current.refund();
+      await tx.wait();
+    } catch (err) {
+      const error = decodeError(err);
+      alert(error.error);
+    }
+  };
+
+  /**
+   * Recuperar puja ganadora
+   */
+  let ownerWithdraw = async () => {
+    try {
+      const tx = await myContract.current.ownerWithdraw();
+      await tx.wait();
     } catch (err) {
       const error = decodeError(err);
       alert(error.error);
@@ -141,10 +168,7 @@ export default function Home() {
       </Row>
       <Row>
         <Col>
-          <p>
-            Estás de suerte! La subasta todavía está abierta hasta las{" "}
-            {deadLine}
-          </p>
+          <p>La subasta está abierta hasta las {deadLine}</p>
           <p>La puja más alta actualmente es de {maxBid} ETH</p>
 
           <Form>
@@ -167,6 +191,46 @@ export default function Home() {
               Pujar!
             </Button>
           </Form>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <Card style={{ width: "18rem" }}>
+            <Card.Body>
+              <Card.Title>Recuperar oferta</Card.Title>
+              <Card.Text>
+                Una vez terminada la subasta podrás recuperar tu oferta si no es
+                la ganadora
+              </Card.Text>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  askRefund();
+                }}
+              >
+                Recuperar oferta!
+              </Button>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col>
+          <Card style={{ width: "18rem" }}>
+            <Card.Body>
+              <Card.Title>Propietario</Card.Title>
+              <Card.Text>
+                Una vez terminada la subasta podrás recuperar el dinero de la
+                oferta ganadora
+              </Card.Text>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  ownerWithdraw();
+                }}
+              >
+                Recuperar oferta ganadora!
+              </Button>
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
     </Container>
